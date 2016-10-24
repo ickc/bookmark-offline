@@ -5,7 +5,7 @@
 Requirement:
 
 - Pocket account, 
-- `marky.rb` from [Marky the Markdownifier, reintroductions - BrettTerpstra.com](http://brettterpstra.com/2012/06/20/marky-the-markdownifier-reintroductions/), and any gem marky requires. Put marky.rb in this repository.
+- `marky.rb` from [Marky the Markdownifier, reintroductions - BrettTerpstra.com](http://brettterpstra.com/2012/06/20/marky-the-markdownifier-reintroductions/), and any gem marky requires. `Put marky.rb in this repository.`marky.rb` is already added as a submodule.
 
 - Download [database from Pocket](https://getpocket.com/export)
 - cd into this repository
