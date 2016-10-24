@@ -1,9 +1,10 @@
 SHELL := /bin/bash
 
 pocketExport := $(wildcard data/*.html)
+CSV := $(patsubst %.html,%.csv,$(pocketExport))
 database := $(patsubst %.html,%.txt,$(pocketExport))
 
-data: $(database)
+data: $(database) $(CSV)
 init: download marky.rb update
 
 # Initial Preparation #################################################
@@ -24,8 +25,11 @@ marky.rb: submodule/marky.rb
 # Scripting ###########################################################
 
 # convert Pocket's export to a database
+%.csv: %.html
+	printf "%s\n" "URL,Tags" > $@
+	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)".*$$/"\1","\2"/' | sort >> $@
 %.txt: %.html
-	grep -i href $< | sed 's/^.*href="\([^"]*\)".*$$/\1/' > $@
+	grep -i href $< | sed 's/^.*href="\([^"]*\)".*$$/\1/' | sort > $@
 
 # use marky to download all links as a markdown file
 offline: $(database) marky.rb
