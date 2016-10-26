@@ -1,21 +1,32 @@
 SHELL := /bin/bash
 
+# data
+## probably ril_export.html
 pocketExport := $(wildcard data/*.html)
+## probably ril_export.csv
 CSV := $(patsubst %.html,%.csv,$(pocketExport))
-database := $(patsubst %.html,%.txt,$(pocketExport))
+## probably ril_export.txt
+urlList := $(patsubst %.html,%.txt,$(pocketExport))
+## offline.txt
+pathToOffline := data/offline
+urlDownloaded := $(pathToOffline).txt
+# downloaded MD by Marky
+MD := $(wildcard $(pathToOffline)/*.md)
 
-data: $(database) $(CSV)
-init: download marky.rb update
+# prepare pocketExport, marky.rb
+init: download update marky.rb
+# generate from pocketExport
+data: $(CSV) $(urlList) $(urlDownloaded)
 
 # Initial Preparation #################################################
-
-# update submodule
-update:
-	git submodule update --recursive --remote
 
 # download Pocket's export
 download:
 	python -mwebbrowser https://getpocket.com/export
+
+# update submodule
+update:
+	git submodule update --recursive --remote
 
 # prepare marky.rb from submodule
 marky.rb: submodule/marky.rb
@@ -25,16 +36,22 @@ marky.rb: submodule/marky.rb
 # Scripting ###########################################################
 
 # convert Pocket's export to a database
+## $(CSV): 1st column: URL: 2nd column: Tags
 %.csv: %.html
 	printf "%s\n" "URL,Tags" > $@
 	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)".*$$/"\1","\2"/' | sort >> $@
+## $(urlList): a list of URLs only
 %.txt: %.html
 	grep -i href $< | sed 's/^.*href="\([^"]*\)".*$$/\1/' | sort > $@
 
-# use marky to download all links as a markdown file
-offline: $(database) marky.rb
-	mkdir -p offline
+# $(MD): use marky to download all links as markdown files
+offline: $(urlList) marky.rb
+	mkdir -p $(pathToOffline)
 	while IFS='' read -r line || [[ -n "$$line" ]];\
 	do\
-		./marky.rb -o offline "$$line";\
+		./marky.rb -o $(pathToOffline) "$$line";\
 	done < $<
+
+# obtain a list of downloaded URLs
+$(urlDownloaded):
+	find $(pathToOffline) -iname '*.md' -exec bash -c 'head -n 1 "$$0" | grep -oP "\[Source\]\(\K([^ ]*)"' {} \; | sort > $@
