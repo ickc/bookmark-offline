@@ -10,13 +10,16 @@ urlList := $(patsubst %.html,%.txt,$(pocketExport))
 ## offline.txt
 pathToOffline := data/offline
 urlDownloaded := $(pathToOffline).txt
-# downloaded MD by Marky
+### downloaded MD by Marky
 MD := $(wildcard $(pathToOffline)/*.md)
+## online.txt
+pathToOnline := data/online
+urlToBeDownload := $(pathToOnline).txt
 
 # prepare pocketExport, marky.rb
 init: download update marky.rb
 # generate from pocketExport
-data: $(CSV) $(urlList) $(urlDownloaded)
+data: $(CSV) $(urlList) $(urlDownloaded) $(urlToBeDownload)
 
 # Initial Preparation #################################################
 
@@ -45,7 +48,7 @@ marky.rb: submodule/marky.rb
 	grep -i href $< | sed 's/^.*href="\([^"]*\)".*$$/\1/' | sort > $@
 
 # $(MD): use marky to download all links as markdown files
-offline: $(urlList) marky.rb
+offline: $(urlToBeDownload) marky.rb
 	mkdir -p $(pathToOffline)
 	while IFS='' read -r line || [[ -n "$$line" ]];\
 	do\
@@ -55,3 +58,7 @@ offline: $(urlList) marky.rb
 # obtain a list of downloaded URLs
 $(urlDownloaded):
 	find $(pathToOffline) -iname '*.md' -exec bash -c 'head -n 1 "$$0" | grep -oP "\[Source\]\(\K([^ ]*)"' {} \; | sort > $@
+
+$(urlToBeDownload): $(urlList) $(urlDownloaded)
+	comm -23 $^ > $@
+ 
