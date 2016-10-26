@@ -15,11 +15,15 @@ MD := $(wildcard $(pathToOffline)/*.md)
 ## online.txt
 pathToOnline := data/online
 urlToBeDownload := $(pathToOnline).txt
+# Convert all URL in URI
+TXT := $(wildcard data/*.txt)
+URI := $(patsubst %.txt,%.uri,$(TXT))
 
 # prepare pocketExport, marky.rb
 init: download update marky.rb
 # generate from pocketExport
 data: $(CSV) $(urlList) $(urlDownloaded) $(urlToBeDownload)
+uri: $(URI)
 
 # Initial Preparation #################################################
 
@@ -61,4 +65,10 @@ $(urlDownloaded):
 
 $(urlToBeDownload): $(urlList) $(urlDownloaded)
 	comm -23 $^ > $@
- 
+
+%.uri: %.txt
+	: > $@
+	while IFS='' read -r line || [[ -n "$$line" ]];\
+	do\
+		echo "$$line" | perl -MURI::file -e 'print URI::file->new(<STDIN>)."\n"' | sed 's/^\.\///' >> $@;\
+	done < $<
