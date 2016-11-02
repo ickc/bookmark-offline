@@ -54,14 +54,11 @@ marky.rb: submodule/marky.rb
 # $(MD): use marky to download all links as markdown files
 offline: $(urlToBeDownload) marky.rb
 	mkdir -p $(pathToOffline)
-	while IFS='' read -r line || [[ -n "$$line" ]];\
-	do\
-		./marky.rb -o $(pathToOffline) "$$line";\
-	done < $<
+	< $< xargs -i -n1 -P128 ./marky.rb -o $(pathToOffline) {}
 
 # obtain a list of downloaded URLs
 $(urlDownloaded):
-	find $(pathToOffline) -iname '*.md' -exec bash -c 'head -n 1 "$$0" | grep -oP "\[Source\]\(\K([^ ]*)"' {} \; | sort > $@
+	find $(pathToOffline) -iname '*.md' | xargs -i -n1 -P8 bash -c 'head -n 1 "$$0" | grep -oP "\[Source\]\(\K([^ ]*)"' {} | sort > $@
 
 $(urlToBeDownload): $(urlList) $(urlDownloaded)
 	comm -23 $^ > $@
@@ -70,5 +67,5 @@ $(urlToBeDownload): $(urlList) $(urlDownloaded)
 	: > $@
 	while IFS='' read -r line || [[ -n "$$line" ]];\
 	do\
-		echo "$$line" | perl -MURI::file -e 'print URI::file->new(<STDIN>)."\n"' | sed 's/^\.\///' >> $@;\
+		echo "$$line" | perl -MURI::file -e 'print URI::file->new(<STDIN>)."\n"' | sed 's/^\.\///' >> $@ &\
 	done < $<
