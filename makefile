@@ -52,11 +52,14 @@ data/instapaper-export-sort.csv: data/instapaper-export.csv
 ## from Pocket
 %-instapaper.csv: %.html
 	printf "%s\n" "URL,Title,Selection,Folder" > $@
-	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)".*$$/"\1"/' > data/URL.list
-	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)".*$$/"\2"/' > data/Tags.list
-	sed -i 's/,/:/g' data/Tags.list
-	paste data/URL.list data/Tags.list | sed 's/	/,,,/g' | sort >> $@
-	rm data/URL.list data/Tags.list
+	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)">\([^<]*\).*$$/"\1"/' > data/URL.list
+	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)">\([^<]*\).*$$/"\2"/' > data/Folder.list
+	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)">\([^<]*\).*$$/\3/' > data/Title.list
+	sed -i -e 's/"/'\''/g' -e 's/^\(.*\)$$/"\1"/g' data/Title.list
+	sed 's/^.*$$//g' data/URL.list >> data/Selection.list
+	sed -i 's/,/:/g' data/Folder.list
+	paste data/URL.list data/Title.list data/Selection.list data/Folder.list | sed 's/	/,/g' | sort >> $@
+	rm data/URL.list data/Title.list data/Selection.list data/Folder.list
 
 # convert Pocket's export to a database
 ## $(CSV): 1st column: URL: 2nd column: Tags
