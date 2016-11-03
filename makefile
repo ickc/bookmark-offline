@@ -42,6 +42,22 @@ marky.rb: submodule/marky.rb
 
 # Scripting ###########################################################
 
+# Instapaper
+instapaper: data/instapaper-export-sort.csv data/ril_export-instapaper.csv
+## from Instapaper
+data/instapaper-export-sort.csv: data/instapaper-export.csv
+	printf "%s\n" "URL,Title,Selection,Folder" > temp
+	tail -n +2 $< | sort >> temp
+	mv temp $@
+## from Pocket
+%-instapaper.csv: %.html
+	printf "%s\n" "URL,Title,Selection,Folder" > $@
+	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)".*$$/"\1"/' > data/URL.list
+	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)".*$$/"\2"/' > data/Tags.list
+	sed -i 's/,/:/g' data/Tags.list
+	paste data/URL.list data/Tags.list | sed 's/	/,,,/g' >> $@
+	rm data/URL.list data/Tags.list
+
 # convert Pocket's export to a database
 ## $(CSV): 1st column: URL: 2nd column: Tags
 %.csv: %.html
