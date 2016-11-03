@@ -55,7 +55,7 @@ data/instapaper-export-sort.csv: data/instapaper-export.csv
 	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)".*$$/"\1"/' > data/URL.list
 	grep -i href $< | sed 's/^.*href="\([^"]*\)".*tags="\([^"]*\)".*$$/"\2"/' > data/Tags.list
 	sed -i 's/,/:/g' data/Tags.list
-	paste data/URL.list data/Tags.list | sed 's/	/,,,/g' >> $@
+	paste data/URL.list data/Tags.list | sed 's/	/,,,/g' | sort >> $@
 	rm data/URL.list data/Tags.list
 
 # convert Pocket's export to a database
