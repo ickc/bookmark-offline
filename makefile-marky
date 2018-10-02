@@ -20,6 +20,9 @@ marky.rb: submodule/marky.rb
 	rsync $< $@
 	chmod +x $@
 
+clean:
+	rm -f marky.rb
+
 # Scripting ###########################################################
 
 # Downloading: $(MD): use marky to download all links as markdown files
