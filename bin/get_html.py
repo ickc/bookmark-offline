@@ -70,19 +70,22 @@ def main(path, output, verbose):
         df = df_merged
 
         na_idx = df.html.isna()
+        n = np.count_nonzero(na_idx)
 
-        print('{} out of {} urls are new, fetching...'.format(np.count_nonzero(na_idx), df.shape[0]))
+        print('{} out of {} urls are new, fetching...'.format(n, df.shape[0]))
         # fetch html
-        df.loc[na_idx, 'html'] = get_htmls(df[na_idx].index, max_workers=100, verbose=verbose)
+        df.loc[na_idx, 'html'] = get_htmls(df[na_idx].index, max_workers=n, verbose=verbose)
     else:
-        print('{} urls to fetch...'.format(df.shape[0]))
-        df['html'] = get_htmls(df.index, max_workers=100, verbose=verbose)
+        n = df.shape[0]
+        print('{} urls to fetch...'.format(n))
+        df['html'] = get_htmls(df.index, max_workers=n, verbose=verbose)
 
     # no response
     na_idx = df.html.isna()
-    print('{} out of {} urls cannot be fetched, try fetching from archive.org...'.format(np.count_nonzero(na_idx), df.shape[0]))
+    n = np.count_nonzero(na_idx)
+    print('{} out of {} urls cannot be fetched, try fetching from archive.org...'.format(n, df.shape[0]))
     df.loc[na_idx, 'archive'] = True
-    df.loc[na_idx, 'html'] = get_htmls_archive(df[na_idx].index, max_workers=100, verbose=verbose)
+    df.loc[na_idx, 'html'] = get_htmls_archive(df[na_idx].index, max_workers=n, verbose=verbose)
 
     df.to_hdf(
         output,
