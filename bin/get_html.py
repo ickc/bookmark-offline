@@ -7,6 +7,8 @@ import requests
 import pandas as pd
 import numpy as np
 
+from dautil.util import map_parallel
+
 __version__ = '0.1'
 
 HEADERS = {
@@ -40,11 +42,12 @@ def main(path, output):
         na_idx = df_merged.html.isna()
 
         # fetch html
-        df_merged.loc[na_idx, 'html'] = df_merged[na_idx].index.map(get_html)
+        df_merged.loc[na_idx, 'html'] = map_parallel(get_html, df_merged[na_idx].index, mode='multithreading', processes=1000)
 
         df = df_merged
     else:
         df['html'] = df.index.map(get_html)
+        df['html'] = map_parallel(get_html, df.index, mode='multithreading', processes=1000)
 
     df.to_hdf(
         output,
