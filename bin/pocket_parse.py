@@ -10,7 +10,7 @@ __version__ = '0.1'
 def main(input, output):
 
     with open(input, 'r') as f:
-        soup = BeautifulSoup(f.read())
+        soup = BeautifulSoup(f.read(), features="lxml")
 
     results = soup.find_all('a')
     del soup
