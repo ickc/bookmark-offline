@@ -20,7 +20,11 @@ HEADERS = {
 
 
 def get_html(url):
-    return requests.get(url, headers=HEADERS).content.decode('utf-8')
+    try:
+        return requests.get(url, headers=HEADERS).content.decode('utf-8')
+    except:
+        print('Cannot retrieve content from {}'.format(url))
+        return None
 
 
 def main(path, output):
