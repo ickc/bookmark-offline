@@ -1,18 +1,18 @@
 SHELL := /bin/bash
 
-# Note: html.hdf5 should be kept as a cache
+# Note: bookmark.hdf5 should be kept as a cache
 
-all: html.docx
+all: bookmark.docx
 
 clean:
-	rm -f ril_export.hdf5 html.html
+	rm -f ril_export.hdf5 bookmark.html
 Clean: clean
-	rm -f html.docx
+	rm -f bookmark.docx
 
 ril_export.hdf5: ril_export.html
 	pocket_parse.py -o $@ $<
 
-html.hdf5: ril_export.hdf5
+bookmark.hdf5: ril_export.hdf5
 	get_html.py -o $@ $<
 
 %.html: %.hdf5
