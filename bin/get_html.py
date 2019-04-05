@@ -45,7 +45,7 @@ def get_htmls(urls, max_workers=8, verbose=False):
     if verbose:
         result = []
         for i, response in enumerate(responses):
-            print('{} done, {} to go...'.format(i, n))
+            print('{} done, {} to go...'.format(i, n - i))
             result.append(get_html(response, verbose=verbose))
         return result
     else:
