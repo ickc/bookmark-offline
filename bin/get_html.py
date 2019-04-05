@@ -7,9 +7,7 @@ import grequests
 import pandas as pd
 import numpy as np
 
-from dautil.util import map_parallel
-
-__version__ = '0.1'
+__version__ = '0.2'
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -21,16 +19,12 @@ HEADERS = {
 }
 
 
-def get_html(url):
-    try:
-        return grequests.get(url, headers=HEADERS).text
-    except:
-        try:
-            print('Cannot retrieve content from {}. Try to obtain it from archive.org...'.format(url))
-            return grequests.get('https://web.archive.org/web/' + url, headers=HEADERS).text
-        except:
-            print('No Hope for {}!'.format(url))
-            return None
+def get_htmls(urls):
+    return [None if response is None else response.text for response in grequests.map(grequests.get(url, headers=HEADERS) for url in urls)]
+
+
+def get_htmls_archive(urls):
+    return [None if response is None else response.text for response in grequests.map(grequests.get('https://web.archive.org/web/' + url, headers=HEADERS) for url in urls)]
 
 
 def main(path, output):
@@ -43,15 +37,22 @@ def main(path, output):
         # merging dfs
         df_merged = df.merge(df_old[['html']], how='outer', left_index=True, right_index=True)
 
-        na_idx = df_merged.html.isna()
-
-        # fetch html
-        df_merged.loc[na_idx, 'html'] = map_parallel(get_html, df_merged[na_idx].index, mode='multithreading', processes=1000)
-
         df = df_merged
+
+        na_idx = df.html.isna()
+
+        print('{} out of {} urls are new, fetching...'.format(np.count_nonzero(na_idx), df.shape[0]))
+        # fetch html
+        df.loc[na_idx, 'html'] = get_htmls(df[na_idx].index)
     else:
-        df['html'] = df.index.map(get_html)
-        df['html'] = map_parallel(get_html, df.index, mode='multithreading', processes=1000)
+        print('{} urls to fetch...'.format(df.shape[0]))
+        df['html'] = get_htmls(df.index)
+
+    # no response
+    na_idx = df.html.isna()
+    print('{} out of {} urls cannot be fetched, try fetching from archive.org...'.format(np.count_nonzero(na_idx), df.shape[0]))
+    df.loc[na_idx, 'archive'] = True
+    df.loc[na_idx, 'html'] = get_htmls_archive(df[na_idx].index)
 
     df.to_hdf(
         output,
