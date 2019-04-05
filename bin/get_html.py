@@ -1,17 +1,14 @@
 #!/usr/bin/env python
 
 import argparse
+from functools import partial
 from pathlib import Path
 
-import grequests
+from requests_futures.sessions import FuturesSession
 import pandas as pd
 import numpy as np
 
-# see https://stackoverflow.com/a/50039149
-import resource
-resource.setrlimit(resource.RLIMIT_NOFILE, (110000, 110000))
-
-__version__ = '0.2'
+__version__ = '0.3'
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -23,12 +20,25 @@ HEADERS = {
 }
 
 
-def get_htmls(urls):
-    return [None if response is None else response.text for response in grequests.map(grequests.get(url, headers=HEADERS) for url in urls)]
+def get_html(response):
+    try:
+        result = response.result()
+        assert result.status_code // 100 == 2
+        return result.text
+    except:
+        return None
 
 
-def get_htmls_archive(urls):
-    return [None if response is None else response.text for response in grequests.map(grequests.get('https://web.archive.org/web/' + url, headers=HEADERS) for url in urls)]
+def get_htmls(urls, max_workers=8):
+    session = FuturesSession(max_workers=max_workers)
+    responses = [session.get(url, headers=HEADERS) for url in urls]
+    return [get_html(response) for response in responses]
+
+
+def get_htmls_archive(urls, max_workers=8):
+    session = FuturesSession(max_workers=max_workers)
+    responses = [session.get('https://web.archive.org/web/' + url, headers=HEADERS) for url in urls]
+    return [get_html(response) for response in responses]
 
 
 def main(path, output):
@@ -47,7 +57,7 @@ def main(path, output):
 
         print('{} out of {} urls are new, fetching...'.format(np.count_nonzero(na_idx), df.shape[0]))
         # fetch html
-        df.loc[na_idx, 'html'] = get_htmls(df[na_idx].index)
+        df.loc[na_idx, 'html'] = get_htmls(df[na_idx].index, max_workers=100)
     else:
         print('{} urls to fetch...'.format(df.shape[0]))
         df['html'] = get_htmls(df.index)
@@ -56,7 +66,7 @@ def main(path, output):
     na_idx = df.html.isna()
     print('{} out of {} urls cannot be fetched, try fetching from archive.org...'.format(np.count_nonzero(na_idx), df.shape[0]))
     df.loc[na_idx, 'archive'] = True
-    df.loc[na_idx, 'html'] = get_htmls_archive(df[na_idx].index)
+    df.loc[na_idx, 'html'] = get_htmls_archive(df[na_idx].index, max_workers=100)
 
     df.to_hdf(
         output,
