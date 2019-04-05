@@ -7,6 +7,10 @@ import grequests
 import pandas as pd
 import numpy as np
 
+# see https://stackoverflow.com/a/50039149
+import resource
+resource.setrlimit(resource.RLIMIT_NOFILE, (110000, 110000))
+
 __version__ = '0.2'
 
 HEADERS = {
