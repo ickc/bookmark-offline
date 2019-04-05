@@ -3,7 +3,7 @@
 import argparse
 from pathlib import Path
 
-import requests
+import grequests
 import pandas as pd
 import numpy as np
 
@@ -23,10 +23,14 @@ HEADERS = {
 
 def get_html(url):
     try:
-        return requests.get(url, headers=HEADERS).text
+        return grequests.get(url, headers=HEADERS).text
     except:
-        print('Cannot retrieve content from {}'.format(url))
-        return None
+        try:
+            print('Cannot retrieve content from {}. Try to obtain it from archive.org...'.format(url))
+            return grequests.get('https://web.archive.org/web/' + url, headers=HEADERS).text
+        except:
+            print('No Hope for {}!'.format(url))
+            return None
 
 
 def main(path, output):
