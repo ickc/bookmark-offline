@@ -16,6 +16,9 @@ def main(input, output):
     del soup
 
     df = pd.DataFrame((result.attrs for result in results))
+    df.set_index('href', drop=True, inplace=True)
+    df.time_added = pd.to_datetime(df.time_added, unit='s')
+    df.sort_values('time_added', inplace=True)
 
     df.to_hdf(
         output,
