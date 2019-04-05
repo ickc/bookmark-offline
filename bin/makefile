@@ -15,7 +15,7 @@ ril_export.hdf5: ril_export.html
 bookmark.hdf5: ril_export.hdf5
 	get_html.py -o $@ $<
 
-%.html: %.hdf5
+bookmark.html: bookmark.hdf5
 	parse_html.py -o $@ $<
 
 %.docx: %.html
