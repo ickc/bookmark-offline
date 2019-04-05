@@ -60,7 +60,7 @@ def main(path, output):
         df.loc[na_idx, 'html'] = get_htmls(df[na_idx].index, max_workers=100)
     else:
         print('{} urls to fetch...'.format(df.shape[0]))
-        df['html'] = get_htmls(df.index)
+        df['html'] = get_htmls(df.index, max_workers=100)
 
     # no response
     na_idx = df.html.isna()
