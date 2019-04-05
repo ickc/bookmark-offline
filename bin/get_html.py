@@ -20,28 +20,44 @@ HEADERS = {
 }
 
 
-def get_html(response):
+def get_html(response, verbose=False):
     try:
         result = response.result()
+        if verbose:
+            print('Response from {} has status code {}.'.format(result.url, result.status_code))
         assert result.status_code // 100 == 2
         return result.text
     except:
+        if verbose:
+            print('Error occured for {}'.format(response))
         return None
 
 
-def get_htmls(urls, max_workers=8):
+def get_htmls(urls, max_workers=8, verbose=False):
     session = FuturesSession(max_workers=max_workers)
+    if verbose:
+        n = len(urls)
+        print('Submitting {} jobs...'.format(n))
     responses = [session.get(url, headers=HEADERS) for url in urls]
-    return [get_html(response) for response in responses]
+    if verbose:
+        print('Executing {} jobs...'.format(n))
+    # if verbose, run a for loop to show progress explicitly
+    if verbose:
+        result = []
+        for i, response in enumerate(responses):
+            print('{} done, {} to go...'.format(i, n))
+            result.append(get_html(response, verbose=verbose))
+        return result
+    else:
+        return [get_html(response, verbose=verbose) for response in responses]
 
 
-def get_htmls_archive(urls, max_workers=8):
-    session = FuturesSession(max_workers=max_workers)
-    responses = [session.get('https://web.archive.org/web/' + url, headers=HEADERS) for url in urls]
-    return [get_html(response) for response in responses]
+def get_htmls_archive(urls, max_workers=8, verbose=False):
+    urls = ['https://web.archive.org/web/' + url for url in urls]
+    return get_htmls(urls, max_workers=max_workers, verbose=verbose)
 
 
-def main(path, output):
+def main(path, output, verbose):
     df = pd.read_hdf(path)
 
     # if output already existed, updates:
@@ -57,16 +73,16 @@ def main(path, output):
 
         print('{} out of {} urls are new, fetching...'.format(np.count_nonzero(na_idx), df.shape[0]))
         # fetch html
-        df.loc[na_idx, 'html'] = get_htmls(df[na_idx].index, max_workers=100)
+        df.loc[na_idx, 'html'] = get_htmls(df[na_idx].index, max_workers=100, verbose=verbose)
     else:
         print('{} urls to fetch...'.format(df.shape[0]))
-        df['html'] = get_htmls(df.index, max_workers=100)
+        df['html'] = get_htmls(df.index, max_workers=100, verbose=verbose)
 
     # no response
     na_idx = df.html.isna()
     print('{} out of {} urls cannot be fetched, try fetching from archive.org...'.format(np.count_nonzero(na_idx), df.shape[0]))
     df.loc[na_idx, 'archive'] = True
-    df.loc[na_idx, 'html'] = get_htmls_archive(df[na_idx].index, max_workers=100)
+    df.loc[na_idx, 'html'] = get_htmls_archive(df[na_idx].index, max_workers=100, verbose=verbose)
 
     df.to_hdf(
         output,
@@ -85,10 +101,12 @@ def cli():
 
     parser.add_argument('-v', '--version', action='version',
                         version='%(prog)s {}'.format(__version__))
+    parser.add_argument('-V', '--verbose', action='store_true',
+        help='verbose to stdout.')
 
     args = parser.parse_args()
 
-    main(args.input, args.output)
+    main(args.input, args.output, args.verbose)
 
 
 if __name__ == "__main__":
