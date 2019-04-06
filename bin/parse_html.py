@@ -52,7 +52,10 @@ def html_filter(url, text):
 
 def main(path, output):
     df = pd.read_hdf(path)
-    results = map_parallel(html_filter, df.index.values, df.html.values, mode='multiprocessing', processes=20)
+
+    non_na_idx = ~df.html.isna()
+
+    results = map_parallel(html_filter, df[non_na_idx].index, df.loc[non_na_idx, 'html'], mode='multiprocessing', processes=20)
 
     with open(output, 'w') as f:
         f.writelines(results)
