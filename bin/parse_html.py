@@ -26,36 +26,34 @@ def Image_to_Link(elem, doc):
 
 
 def html_filter(url, text):
-    try:
-        # readability
-        doc = Document(text)
-        title = doc.short_title()
-        html_sum = doc.summary(html_partial=True)
-
+    # readability
+    doc = Document(text)
+    title = doc.short_title()
+    html_sum = doc.summary(html_partial=True)
         # pandoc
         try:
-            doc = pf.convert_text(html_sum, input_format='html-native_divs-native_spans', standalone=True)
-        # strange error, pandoc and pypandoc can take this without problem.
-        except OSError as e:
-            print('Error {} from panflute encountered when processing {}, fallback to pypandoc.'.format(e, url))
-            doc = pf.convert_text(pypandoc.convert_text(html_sum, 'json', 'html-native_divs-native_spans'), input_format='json', standalone=True)
-        except JSONDecodeError as e:
-            print('Error {} from panflute encountered when processing {}, fallback to pypandoc.'.format(e, url))
-            doc = pf.convert_text(pypandoc.convert_text(html_sum, 'html', 'html-native_divs-native_spans'), input_format='html-native_divs-native_spans', standalone=True)
+            try:
+                doc = pf.convert_text(html_sum, input_format='html-native_divs-native_spans', standalone=True)
+            # strange error, pandoc and pypandoc can take this without problem.
+            except OSError as e:
+                print('Error {} from panflute encountered when processing {}, fallback to pypandoc.'.format(e, url))
+                doc = pf.convert_text(pypandoc.convert_text(html_sum, 'json', 'html-native_divs-native_spans'), input_format='json', standalone=True)
+            except JSONDecodeError as e:
+                print('Error {} from panflute encountered when processing {}, fallback to pypandoc.'.format(e, url))
+                doc = pf.convert_text(pypandoc.convert_text(html_sum, 'html', 'html-native_divs-native_spans'), input_format='html-native_divs-native_spans', standalone=True)
 
-        doc = pf.run_filters((increase_header_level, Image_to_Link), doc=doc)
+            doc = pf.run_filters((increase_header_level, Image_to_Link), doc=doc)
 
-        temp = pf.convert_text('''# {}
+            temp = pf.convert_text('''# {}\n\n[Source]({})'''.format(title, url))
 
-[Source]({})'''.format(title, url))
+            for item in temp[::-1]:
+                doc.content.insert(0, item)
 
-        for item in temp[::-1]:
-            doc.content.insert(0, item)
-
-        return pf.convert_text(doc, input_format='panflute', output_format='html')
-    except:
-        print('Cannot handle error, stop processing {}.'.format(url))
-        return ''
+            result = pf.convert_text(doc, input_format='panflute', output_format='html')
+        except:
+            print('Cannot handle error from panflute, stop using pandoc filter on {}.'.format(url))
+            result = '<h1>{}</h1><p><a href="{}">Source</a></p>{}'.format(title, url, html_sum)
+    return result
 
 
 def main(path, output):
