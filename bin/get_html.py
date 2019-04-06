@@ -97,7 +97,7 @@ def main(path, output, verbose, worker, timeout):
     df.to_hdf(
         output,
         'df',
-        format='table',
+        # format='table',
         complevel=9,
         fletcher32=True
     )
