@@ -72,6 +72,8 @@ def main(path, output, verbose, worker, timeout):
         df_merged = df.merge(df_old[['html']], how='outer', left_index=True, right_index=True)
 
         df = df_merged
+        # merging might have changed the orders
+        df.sort_values('time_added', inplace=True)
 
         na_idx = df.html.isna()
         n = np.count_nonzero(na_idx)
