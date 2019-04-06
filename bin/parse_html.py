@@ -52,7 +52,7 @@ def html_filter(url, text):
 
 def main(path, output):
     df = pd.read_hdf(path)
-    results = map_parallel(html_filter, df.index, df.html, mode='multiprocessing', processes=20)
+    results = map_parallel(html_filter, df.index.values, df.html.values, mode='multiprocessing', processes=20)
 
     with open(output, 'w') as f:
         f.writelines(results)
