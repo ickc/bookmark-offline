@@ -2,6 +2,7 @@
 
 import argparse
 import os
+from json import JSONDecodeError
 
 import pandas as pd
 from readability import Document
@@ -25,29 +26,36 @@ def Image_to_Link(elem, doc):
 
 
 def html_filter(url, text):
-    # readability
-    doc = Document(text)
-    title = doc.short_title()
-    html_sum = doc.summary(html_partial=True)
-
-    # pandoc
     try:
-        doc = pf.convert_text(html_sum, input_format='html-native_divs-native_spans', standalone=True)
-    # strange error, pandoc and pypandoc can take this without problem.
-    except OSError as e:
-        print('Error {} from panflute encountered when processing {}, fallback to pypandoc.'.format(e, url))
-        doc = pf.convert_text(pypandoc.convert_text(html_sum, 'json', 'html-native_divs-native_spans'), input_format='json', standalone=True)
+        # readability
+        doc = Document(text)
+        title = doc.short_title()
+        html_sum = doc.summary(html_partial=True)
 
-    doc = pf.run_filters((increase_header_level, Image_to_Link), doc=doc)
+        # pandoc
+        try:
+            doc = pf.convert_text(html_sum, input_format='html-native_divs-native_spans', standalone=True)
+        # strange error, pandoc and pypandoc can take this without problem.
+        except OSError as e:
+            print('Error {} from panflute encountered when processing {}, fallback to pypandoc.'.format(e, url))
+            doc = pf.convert_text(pypandoc.convert_text(html_sum, 'json', 'html-native_divs-native_spans'), input_format='json', standalone=True)
+        except JSONDecodeError as e:
+            print('Error {} from panflute encountered when processing {}, fallback to pypandoc.'.format(e, url))
+            doc = pf.convert_text(pypandoc.convert_text(html_sum, 'html', 'html-native_divs-native_spans'), input_format='html-native_divs-native_spans', standalone=True)
 
-    temp = pf.convert_text('''# {}
+        doc = pf.run_filters((increase_header_level, Image_to_Link), doc=doc)
+
+        temp = pf.convert_text('''# {}
 
 [Source]({})'''.format(title, url))
 
-    for item in temp[::-1]:
-        doc.content.insert(0, item)
+        for item in temp[::-1]:
+            doc.content.insert(0, item)
 
-    return pf.convert_text(doc, input_format='panflute', output_format='html')
+        return pf.convert_text(doc, input_format='panflute', output_format='html')
+    except:
+        print('Cannot handle error, stop processing {}.'.format(url))
+        return ''
 
 
 def main(path, output):
