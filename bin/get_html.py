@@ -57,7 +57,7 @@ def get_htmls_archive(urls, max_workers=8, verbose=False):
     return get_htmls(urls, max_workers=max_workers, verbose=verbose)
 
 
-def main(path, output, verbose):
+def main(path, output, verbose, worker):
     df = pd.read_hdf(path)
 
     # if output already existed, updates:
@@ -74,18 +74,21 @@ def main(path, output, verbose):
 
         print('{} out of {} urls are new, fetching...'.format(n, df.shape[0]))
         # fetch html
-        df.loc[na_idx, 'html'] = get_htmls(df[na_idx].index, max_workers=n, verbose=verbose)
+        n_workers = worker if worker else n
+        df.loc[na_idx, 'html'] = get_htmls(df[na_idx].index, max_workers=n_workers, verbose=verbose)
     else:
         n = df.shape[0]
         print('{} urls to fetch...'.format(n))
-        df['html'] = get_htmls(df.index, max_workers=n, verbose=verbose)
+        n_workers = worker if worker else n
+        df['html'] = get_htmls(df.index, max_workers=n_workers, verbose=verbose)
 
     # no response
     na_idx = df.html.isna()
     n = np.count_nonzero(na_idx)
     print('{} out of {} urls cannot be fetched, try fetching from archive.org...'.format(n, df.shape[0]))
     df.loc[na_idx, 'archive'] = True
-    df.loc[na_idx, 'html'] = get_htmls_archive(df[na_idx].index, max_workers=n, verbose=verbose)
+    n_workers = worker if worker else n
+    df.loc[na_idx, 'html'] = get_htmls_archive(df[na_idx].index, max_workers=n_workers, verbose=verbose)
 
     df.to_hdf(
         output,
@@ -101,6 +104,8 @@ def cli():
 
     parser.add_argument('input', help='Input urls in HDF5.')
     parser.add_argument('-o', '--output', help='Output HDF5. Update file if exists.')
+    parser.add_argument('-p', '--worker', type=int,
+        help='No. of workers used. If not specified, use as many as needed.')
 
     parser.add_argument('-v', '--version', action='version',
                         version='%(prog)s {}'.format(__version__))
@@ -109,7 +114,7 @@ def cli():
 
     args = parser.parse_args()
 
-    main(args.input, args.output, args.verbose)
+    main(args.input, args.output, args.verbose, args.worker)
 
 
 if __name__ == "__main__":
