@@ -30,7 +30,7 @@ def get_html(response, verbose=False):
         if verbose:
             print('Response from {} has status code {}.'.format(result.url, result.status_code))
         assert result.status_code // 100 == 2
-        return result.text
+        return result.content.decode()
     except:
         if verbose:
             print('Error occured for {}'.format(response))
