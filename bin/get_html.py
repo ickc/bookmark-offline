@@ -89,13 +89,11 @@ def main(path, output, verbose, worker, timeout):
         df['html'] = get_htmls(df.index, max_workers=n_workers, verbose=verbose, timeout=timeout)
 
     # no response
-    na_idx = df.html.isna()
-    n = np.count_nonzero(na_idx)
+    df['archive'] = df.html.isna()
+    n = np.count_nonzero(df.archive)
     print('{} out of {} urls cannot be fetched, try fetching from archive.org...'.format(n, df.shape[0]))
-    df.loc[na_idx, 'archive'] = True
-    df.archive.fillna(False, inplace=True)
     n_workers = worker if worker else n
-    df.loc[na_idx, 'html'] = get_htmls_archive(df[na_idx].index, max_workers=n_workers, verbose=verbose, timeout=timeout)
+    df.loc[df.archive, 'html'] = get_htmls_archive(df[df.archive].index, max_workers=n_workers, verbose=verbose, timeout=timeout)
 
     df.to_hdf(
         output,
