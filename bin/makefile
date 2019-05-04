@@ -12,8 +12,9 @@ Clean: clean
 ril_export.hdf5: ril_export.html
 	pocket_parse.py -o $@ $<
 
+# limit no. of workers to 100 to reduce memory use
 bookmark.hdf5: ril_export.hdf5
-	get_html.py -o $@ $<
+	get_html.py -o $@ $< -p 100
 
 bookmark.html: bookmark.hdf5
 	parse_html.py -o $@ $<
