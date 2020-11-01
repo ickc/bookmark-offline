@@ -100,7 +100,6 @@ def main(path, output, verbose, worker, timeout):
         'df',
         format='table',
         complevel=9,
-        fletcher32=True
     )
 
 

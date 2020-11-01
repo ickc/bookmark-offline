@@ -25,7 +25,6 @@ def main(input, output):
         'df',
         format='table',
         complevel=9,
-        fletcher32=True
     )
 
 
