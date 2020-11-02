@@ -20,4 +20,4 @@ bookmark.html: bookmark.hdf5
 	parse_html.py -o $@ $<
 
 %.docx: %.html
-	pandoc -o $@ $< -M title='My Bookmarks'
+	ebook-convert $< $@
